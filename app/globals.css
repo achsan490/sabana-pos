@@ -1,0 +1,172 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@media print {
+  body * {
+    visibility: hidden;
+  }
+
+  #printable-receipt,
+  #printable-receipt * {
+    visibility: visible;
+  }
+
+  #printable-receipt {
+    display: block !important;
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    margin: 0;
+    padding: 0;
+  }
+
+  @page {
+    margin: 0;
+  }
+}
+
+@layer base {
+  :root {
+    --background: 0 0% 98%;
+    --foreground: 0 0% 9%;
+    --card: 0 0% 100%;
+    --card-foreground: 0 0% 9%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 0 0% 9%;
+    --primary: 348 90% 48%;
+    /* Richer Red */
+    --primary-foreground: 0 0% 100%;
+    --secondary: 45 100% 55%;
+    /* Golden Yellow */
+    --secondary-foreground: 0 0% 9%;
+    --muted: 0 0% 96%;
+    --muted-foreground: 0 0% 45%;
+    --accent: 348 90% 98%;
+    --accent-foreground: 348 90% 48%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 0 0% 90%;
+    --input: 0 0% 90%;
+    --ring: 348 90% 48%;
+    --radius: 1rem;
+
+    /* Sabana Premium Palette */
+    --sabana-red: 350 85% 50%;
+    --sabana-red-light: 350 90% 60%;
+    --sabana-red-dark: 350 80% 40%;
+
+    --sabana-yellow: 45 95% 55%;
+    --sabana-yellow-light: 45 95% 65%;
+    --sabana-yellow-dark: 45 95% 45%;
+
+    --sabana-charcoal: 220 15% 10%;
+  }
+
+  .dark {
+    --background: 220 15% 10%;
+    --foreground: 0 0% 98%;
+    --card: 220 15% 12%;
+    --card-foreground: 0 0% 98%;
+    --popover: 220 15% 12%;
+    --popover-foreground: 0 0% 98%;
+    --primary: 348 90% 48%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 45 100% 55%;
+    --secondary-foreground: 0 0% 9%;
+    --muted: 220 15% 16%;
+    --muted-foreground: 220 10% 65%;
+    --accent: 220 15% 16%;
+    --accent-foreground: 0 0% 98%;
+    --destructive: 0 62% 30%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 220 15% 18%;
+    --input: 220 15% 18%;
+    --ring: 348 90% 48%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-gradient-to-br from-gray-50 via-white to-gray-50 text-foreground font-sans selection:bg-[hsl(var(--sabana-red))]/20 selection:text-[hsl(var(--sabana-red-dark))];
+    font-feature-settings: "rlig" 1, "calt" 1;
+  }
+
+  /* Apply Outfit font to headings */
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    font-family: var(--font-outfit), var(--font-inter), sans-serif;
+  }
+}
+
+@layer utilities {
+
+  /* Glassmorphism */
+  .glass {
+    @apply bg-white/70 backdrop-blur-xl border border-white/50 shadow-xl;
+  }
+
+  .glass-dark {
+    @apply bg-black/70 backdrop-blur-xl border border-white/10 shadow-xl;
+  }
+
+  /* Premium Gradients */
+  .gradient-hero {
+    @apply bg-gradient-to-br from-[hsl(var(--sabana-red))] via-[hsl(var(--sabana-red-light))] to-[hsl(var(--sabana-yellow))];
+  }
+
+  .text-gradient {
+    @apply bg-clip-text text-transparent bg-gradient-to-r from-[hsl(var(--sabana-red))] to-[hsl(var(--sabana-red-dark))];
+  }
+
+  .text-gradient-gold {
+    @apply bg-clip-text text-transparent bg-gradient-to-r from-[hsl(var(--sabana-yellow-dark))] via-[hsl(var(--sabana-yellow))] to-[hsl(var(--sabana-yellow-light))];
+  }
+
+  /* Cards */
+  .card-premium {
+    @apply bg-white/80 backdrop-blur-md border border-white/60 shadow-lg hover:shadow-xl hover:shadow-[hsl(var(--sabana-red))]/5 transition-all duration-500 rounded-2xl;
+  }
+
+  /* Animations */
+  .animate-float {
+    animation: float 6s ease-in-out infinite;
+  }
+
+  .animate-slide-up {
+    animation: slideUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  }
+}
+
+@keyframes float {
+
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
