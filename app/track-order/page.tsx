@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { Search, Package, Clock, CheckCircle, XCircle, ArrowLeft } from "lucide-react";
 import Link from "next/link";
@@ -12,7 +12,7 @@ import { getOrderByNumber } from "@/app/actions/track-order";
 import { OrderWithItems } from "@/lib/supabase";
 import { formatCurrency, formatDate } from "@/lib/utils";
 
-export default function TrackOrderPage() {
+function TrackOrderContent() {
     const [orderNumber, setOrderNumber] = useState("");
     const [order, setOrder] = useState<OrderWithItems | null>(null);
     const [loading, setLoading] = useState(false);
@@ -23,7 +23,6 @@ export default function TrackOrderPage() {
         const orderParam = searchParams.get("order");
         if (orderParam) {
             setOrderNumber(orderParam);
-            // Auto-search when order number is in URL
             getOrderByNumber(orderParam).then((result) => {
                 if (result.success && result.order) {
                     setOrder(result.order as OrderWithItems);
@@ -36,24 +35,19 @@ export default function TrackOrderPage() {
 
     const handleSearch = async (e: React.FormEvent) => {
         e.preventDefault();
-
         if (!orderNumber.trim()) {
             setError("Masukkan nomor pesanan");
             return;
         }
-
         setLoading(true);
         setError("");
         setOrder(null);
-
         const result = await getOrderByNumber(orderNumber.trim());
-
         if (result.success && result.order) {
             setOrder(result.order as OrderWithItems);
         } else {
             setError(result.error || "Pesanan tidak ditemukan");
         }
-
         setLoading(false);
     };
 
@@ -95,7 +89,6 @@ export default function TrackOrderPage() {
 
     return (
         <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-100">
-            {/* Header */}
             <header className="sticky top-0 z-50 bg-white/95 backdrop-blur-md border-b border-gray-200 shadow-sm">
                 <div className="container mx-auto px-4 py-4">
                     <div className="flex items-center gap-4">
@@ -117,9 +110,7 @@ export default function TrackOrderPage() {
                 </div>
             </header>
 
-            {/* Main Content */}
             <main className="container mx-auto px-4 py-8 max-w-2xl">
-                {/* Search Form */}
                 <Card className="mb-6 shadow-lg border-0">
                     <CardHeader>
                         <CardTitle className="flex items-center gap-2">
@@ -168,7 +159,6 @@ export default function TrackOrderPage() {
                     </CardContent>
                 </Card>
 
-                {/* Order Details */}
                 {order && statusInfo && StatusIcon && (
                     <Card className="shadow-lg border-0 animate-in fade-in slide-in-from-bottom-4 duration-500">
                         <CardHeader className="border-b bg-gradient-to-r from-gray-50 to-white">
@@ -188,12 +178,10 @@ export default function TrackOrderPage() {
                         </CardHeader>
 
                         <CardContent className="pt-6 space-y-6">
-                            {/* Status Description */}
                             <div className={`p-4 rounded-lg ${statusInfo.color.replace('text-', 'bg-').replace('800', '50')} border`}>
                                 <p className="text-sm font-medium">{statusInfo.description}</p>
                             </div>
 
-                            {/* Customer Info */}
                             {order.customer_name && (
                                 <div className="space-y-2">
                                     <h3 className="font-semibold text-sm text-muted-foreground">Informasi Pengiriman</h3>
@@ -214,7 +202,6 @@ export default function TrackOrderPage() {
                                 </div>
                             )}
 
-                            {/* Order Items */}
                             <div className="space-y-2">
                                 <h3 className="font-semibold text-sm text-muted-foreground">Detail Pesanan</h3>
                                 <div className="space-y-2">
@@ -234,7 +221,6 @@ export default function TrackOrderPage() {
                                 </div>
                             </div>
 
-                            {/* Total */}
                             <div className="border-t-2 pt-4">
                                 <div className="flex justify-between items-center mb-2">
                                     <span className="text-sm text-muted-foreground">Subtotal</span>
@@ -255,7 +241,6 @@ export default function TrackOrderPage() {
                                 </p>
                             </div>
 
-                            {/* Help Section */}
                             <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 text-sm">
                                 <p className="font-medium text-blue-900 mb-1">Butuh Bantuan?</p>
                                 <p className="text-blue-800">
@@ -267,5 +252,13 @@ export default function TrackOrderPage() {
                 )}
             </main>
         </div>
+    );
+}
+
+export default function TrackOrderPage() {
+    return (
+        <Suspense fallback={<div className="min-h-screen flex items-center justify-center">Loading...</div>}>
+            <TrackOrderContent />
+        </Suspense>
     );
 }
