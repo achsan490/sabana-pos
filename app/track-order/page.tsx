@@ -12,6 +12,9 @@ import { getOrderByNumber } from "@/app/actions/track-order";
 import { OrderWithItems } from "@/lib/supabase";
 import { formatCurrency, formatDate } from "@/lib/utils";
 
+// Force dynamic rendering
+export const dynamic = 'force-dynamic';
+
 function TrackOrderContent() {
     const [orderNumber, setOrderNumber] = useState("");
     const [order, setOrder] = useState<OrderWithItems | null>(null);
