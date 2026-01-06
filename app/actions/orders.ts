@@ -10,6 +10,10 @@ interface CreateOrderData {
     total: number;
     paymentMethod: "cash" | "qris" | "bank_transfer";
     items: CartItem[];
+    customerName?: string;
+    customerPhone?: string;
+    customerAddress?: string;
+    status?: "completed" | "pending";
 }
 
 export async function createOrder(
@@ -24,15 +28,18 @@ export async function createOrder(
                 subtotal: orderData.subtotal,
                 tax: orderData.tax,
                 total: orderData.total,
+                customer_name: orderData.customerName,
+                customer_phone: orderData.customerPhone,
+                customer_address: orderData.customerAddress,
                 payment_method: orderData.paymentMethod,
-                status: "completed",
+                status: orderData.status || "completed",
             })
             .select()
             .single();
 
         if (orderError || !order) {
             console.error("Error creating order:", orderError);
-            return { success: false, error: "Failed to create order" };
+            return { success: false, error: orderError?.message || "Failed to create order" };
         }
 
         // Insert order items
@@ -51,7 +58,7 @@ export async function createOrder(
 
         if (itemsError) {
             console.error("Error creating order items:", itemsError);
-            return { success: false, error: "Failed to create order items" };
+            return { success: false, error: itemsError.message };
         }
 
         return { success: true, orderId: order.id };
@@ -186,6 +193,28 @@ export async function deleteOrders(ids: string[]): Promise<{ success: boolean; e
         return { success: true };
     } catch (error) {
         console.error("Error in deleteOrders:", error);
+        return { success: false, error: "An unexpected error occurred" };
+    }
+}
+
+export async function updateOrderStatus(
+    id: string,
+    status: "completed" | "cancelled" | "pending"
+): Promise<{ success: boolean; error?: string }> {
+    try {
+        const { error } = await supabase
+            .from("orders")
+            .update({ status })
+            .eq("id", id);
+
+        if (error) {
+            console.error("Error updating order status:", error);
+            return { success: false, error: "Failed to update order status" };
+        }
+
+        return { success: true };
+    } catch (error) {
+        console.error("Error in updateOrderStatus:", error);
         return { success: false, error: "An unexpected error occurred" };
     }
 }

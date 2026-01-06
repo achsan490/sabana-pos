@@ -11,6 +11,7 @@ import { ProductForm } from "@/components/admin/ProductForm";
 import { getAllProductsForAdmin } from "@/app/actions/admin-products";
 import { getCategories } from "@/app/actions/categories";
 import { Product, Category } from "@/lib/supabase";
+import { MenuQRCode } from "@/components/admin/MenuQRCode";
 
 export default function AdminPage() {
     const [products, setProducts] = useState<Product[]>([]);
@@ -95,7 +96,15 @@ export default function AdminPage() {
                                 </p>
                             </div>
                         </div>
-                        <div className="flex gap-4">
+                        <div className="flex gap-3">
+                            <Link href="/admin/online-orders">
+                                <Button
+                                    variant="outline"
+                                    className="border-blue-500/20 text-blue-600 hover:bg-blue-500/5"
+                                >
+                                    📦 Pesanan Online
+                                </Button>
+                            </Link>
                             <Link href="/admin/categories">
                                 <Button
                                     variant="outline"
@@ -120,7 +129,12 @@ export default function AdminPage() {
 
             {/* Main Content */}
             <main className="container mx-auto px-4 py-8 max-w-7xl">
-                <Card className="card-premium border-0 shadow-xl animate-slide-up" style={{ animationDelay: '0.2s' }}>
+                {/* QR Code Section */}
+                <div className="mb-8 animate-slide-up" style={{ animationDelay: '0.2s' }}>
+                    <MenuQRCode />
+                </div>
+
+                <Card className="card-premium border-0 shadow-xl animate-slide-up" style={{ animationDelay: '0.3s' }}>
                     <CardHeader className="border-b border-gray-100 pb-6">
                         <CardTitle className="text-2xl font-bold text-gradient mb-6">Daftar Produk</CardTitle>
                         <div className="flex flex-col sm:flex-row gap-4">

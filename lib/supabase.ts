@@ -33,8 +33,11 @@ export interface Order {
     subtotal: number;
     tax: number;
     total: number;
+    customer_name?: string;
+    customer_phone?: string;
+    customer_address?: string;
     payment_method: "cash" | "qris" | "bank_transfer";
-    status: "completed" | "cancelled";
+    status: "completed" | "cancelled" | "pending";
     amount_paid?: number;
     change_amount?: number;
     created_at: string;

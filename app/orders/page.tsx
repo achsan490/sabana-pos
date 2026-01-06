@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { ArrowLeft, Package, Calendar, CreditCard, Eye, Receipt as ReceiptIcon, Trash2 } from "lucide-react";
+import { ArrowLeft, Package, Calendar, CreditCard, Eye, Receipt as ReceiptIcon, Trash2, User } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -25,7 +25,7 @@ import {
     DialogFooter,
 } from "@/components/ui/dialog";
 
-import { getOrders, deleteOrder, deleteOrders } from "@/app/actions/orders";
+import { getOrders, deleteOrder, deleteOrders, updateOrderStatus } from "@/app/actions/orders";
 import { OrderWithItems } from "@/lib/supabase";
 import { formatCurrency, formatDate } from "@/lib/utils";
 import { Receipt } from "@/components/order/Receipt";
@@ -43,7 +43,10 @@ export default function OrdersPage() {
 
     // Bulk Delete State
     const [ordersToDelete, setOrdersToDelete] = useState<string[]>([]);
+
     const [isBulkDeleteOpen, setIsBulkDeleteOpen] = useState(false);
+    const [statusFilter, setStatusFilter] = useState<"all" | "pending" | "completed" | "cancelled">("all");
+    const [isUpdating, setIsUpdating] = useState(false);
 
     async function fetchOrders() {
         setLoading(true);
@@ -110,6 +113,27 @@ export default function OrdersPage() {
         }
     };
 
+    const handleUpdateStatus = async (status: "completed" | "cancelled") => {
+        if (!selectedOrder) return;
+
+        setIsUpdating(true);
+        try {
+            const result = await updateOrderStatus(selectedOrder.id, status);
+            if (result.success) {
+                setOrders(prev => prev.map(o => o.id === selectedOrder.id ? { ...o, status } : o));
+                setSelectedOrder(prev => prev ? { ...prev, status } : null);
+                setIsDetailsOpen(false);
+            } else {
+                alert("Failed to update status: " + result.error);
+            }
+        } catch (error) {
+            console.error(error);
+            alert("An error occurred.");
+        } finally {
+            setIsUpdating(false);
+        }
+    };
+
     const getPaymentMethodLabel = (method: string) => {
         switch (method) {
             case "cash": return "Cash";
@@ -124,6 +148,15 @@ export default function OrdersPage() {
             case "cash": return "bg-green-100 text-green-800 border-green-200";
             case "qris": return "bg-blue-100 text-blue-800 border-blue-200";
             case "bank_transfer": return "bg-purple-100 text-purple-800 border-purple-200";
+            default: return "bg-gray-100 text-gray-800 border-gray-200";
+        }
+    };
+
+    const getStatusColor = (status: string) => {
+        switch (status) {
+            case "completed": return "bg-green-100 text-green-800 border-green-200";
+            case "pending": return "bg-yellow-100 text-yellow-800 border-yellow-200";
+            case "cancelled": return "bg-red-100 text-red-800 border-red-200";
             default: return "bg-gray-100 text-gray-800 border-gray-200";
         }
     };
@@ -164,7 +197,12 @@ export default function OrdersPage() {
         return groups;
     };
 
-    const groupedOrders = groupOrdersByDate(orders);
+    const filteredOrders = orders.filter(order => {
+        if (statusFilter === "all") return true;
+        return order.status === statusFilter;
+    });
+
+    const groupedOrders = groupOrdersByDate(filteredOrders);
     const groups = Object.keys(groupedOrders);
 
     return (
@@ -203,8 +241,19 @@ export default function OrdersPage() {
             {/* Main Content */}
             <main className="container mx-auto px-4 py-8 max-w-5xl print:hidden">
                 <Card className="card-premium border-0 shadow-xl animate-slide-up">
-                    <CardHeader className="border-b border-gray-100 pb-0 mb-4">
-                        {/* Use CardHeader for some spacing if needed, or remove */}
+                    <CardHeader className="border-b border-gray-100 pb-0 mb-4 px-6 pt-6">
+                        <div className="flex gap-2 pb-4 overflow-x-auto">
+                            {["all", "pending", "completed", "cancelled"].map((status) => (
+                                <Button
+                                    key={status}
+                                    variant={statusFilter === status ? "default" : "outline"}
+                                    onClick={() => setStatusFilter(status as any)}
+                                    className={`capitalize ${statusFilter === status ? "bg-[hsl(var(--sabana-red))]" : ""}`}
+                                >
+                                    {status}
+                                </Button>
+                            ))}
+                        </div>
                     </CardHeader>
                     <CardContent className="p-0">
                         {loading ? (
@@ -246,6 +295,7 @@ export default function OrdersPage() {
                                                     <TableHead>Items</TableHead>
                                                     <TableHead>Total</TableHead>
                                                     <TableHead>Payment</TableHead>
+                                                    <TableHead>Status</TableHead>
                                                     <TableHead className="text-right">Action</TableHead>
                                                 </TableRow>
                                             </TableHeader>
@@ -277,8 +327,15 @@ export default function OrdersPage() {
                                                             {formatCurrency(order.total)}
                                                         </TableCell>
                                                         <TableCell>
-                                                            <Badge className={`${getPaymentMethodColor(order.payment_method)} border shadow-none`}>
-                                                                {getPaymentMethodLabel(order.payment_method)}
+                                                            <div className="flex flex-col gap-1">
+                                                                <Badge className={`${getPaymentMethodColor(order.payment_method)} border shadow-none w-fit`}>
+                                                                    {getPaymentMethodLabel(order.payment_method)}
+                                                                </Badge>
+                                                            </div>
+                                                        </TableCell>
+                                                        <TableCell>
+                                                            <Badge className={`${getStatusColor(order.status)} border shadow-none capitalize`}>
+                                                                {order.status}
                                                             </Badge>
                                                         </TableCell>
                                                         <TableCell className="text-right">
@@ -313,9 +370,14 @@ export default function OrdersPage() {
                         <DialogTitle className="flex items-center justify-between text-xl">
                             <span>Order #{selectedOrder?.order_number}</span>
                             {selectedOrder && (
-                                <Badge className={getPaymentMethodColor(selectedOrder.payment_method)}>
-                                    {getPaymentMethodLabel(selectedOrder.payment_method)}
-                                </Badge>
+                                <div className="flex gap-2">
+                                    <Badge className={getStatusColor(selectedOrder.status)}>
+                                        {selectedOrder.status}
+                                    </Badge>
+                                    <Badge className={getPaymentMethodColor(selectedOrder.payment_method)}>
+                                        {getPaymentMethodLabel(selectedOrder.payment_method)}
+                                    </Badge>
+                                </div>
                             )}
                         </DialogTitle>
                         <DialogDescription>
@@ -325,6 +387,17 @@ export default function OrdersPage() {
 
                     {selectedOrder && (
                         <div className="py-4">
+                            {/* Customer Details */}
+                            {selectedOrder.customer_name && (
+                                <div className="mb-4 p-4 bg-muted/50 rounded-lg text-sm space-y-1">
+                                    <h4 className="font-semibold mb-2 flex items-center gap-2">
+                                        <User className="h-4 w-4" /> Customer Details
+                                    </h4>
+                                    <p><span className="font-medium">Name:</span> {selectedOrder.customer_name}</p>
+                                    <p><span className="font-medium">Phone:</span> {selectedOrder.customer_phone}</p>
+                                    <p><span className="font-medium">Address:</span> {selectedOrder.customer_address}</p>
+                                </div>
+                            )}
                             <div className="space-y-4 max-h-[60vh] overflow-y-auto pr-2">
                                 {selectedOrder.order_items.map((item) => (
                                     <div key={item.id} className="flex justify-between items-start pb-3 border-b border-gray-100 last:border-0 last:pb-0">
@@ -352,21 +425,44 @@ export default function OrdersPage() {
                         </div>
                     )}
 
-                    <DialogFooter className="gap-2 sm:gap-0">
-                        <Button
-                            variant="outline"
-                            onClick={handlePrint}
-                            className="gap-2"
-                        >
-                            <ReceiptIcon className="h-4 w-4" />
-                            Print Receipt
-                        </Button>
-                        <Button
-                            className="bg-[hsl(var(--sabana-red))] hover:bg-[hsl(var(--sabana-red))]/90 text-white"
-                            onClick={() => setIsDetailsOpen(false)}
-                        >
-                            Close
-                        </Button>
+                    <DialogFooter className="gap-2 sm:gap-0 flex-col sm:flex-row">
+                        <div className="flex gap-2 w-full sm:w-auto">
+                            {selectedOrder?.status === "pending" && (
+                                <>
+                                    <Button
+                                        variant="destructive"
+                                        onClick={() => handleUpdateStatus("cancelled")}
+                                        className="flex-1 sm:flex-none"
+                                        disabled={isUpdating}
+                                    >
+                                        Reject
+                                    </Button>
+                                    <Button
+                                        className="bg-green-600 hover:bg-green-700 text-white flex-1 sm:flex-none"
+                                        onClick={() => handleUpdateStatus("completed")}
+                                        disabled={isUpdating}
+                                    >
+                                        Confirm
+                                    </Button>
+                                </>
+                            )}
+                        </div>
+                        <div className="flex gap-2 w-full sm:w-auto">
+                            <Button
+                                variant="outline"
+                                onClick={handlePrint}
+                                className="gap-2 flex-1 sm:flex-none"
+                            >
+                                <ReceiptIcon className="h-4 w-4" />
+                                Print
+                            </Button>
+                            <Button
+                                className="bg-[hsl(var(--sabana-red))] hover:bg-[hsl(var(--sabana-red))]/90 text-white flex-1 sm:flex-none"
+                                onClick={() => setIsDetailsOpen(false)}
+                            >
+                                Close
+                            </Button>
+                        </div>
                     </DialogFooter>
                 </DialogContent>
             </Dialog>
