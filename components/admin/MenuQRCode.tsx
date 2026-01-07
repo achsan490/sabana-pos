@@ -11,9 +11,7 @@ export function MenuQRCode() {
     const [copied, setCopied] = useState(false);
 
     // Get the full URL for the menu page
-    const menuUrl = typeof window !== 'undefined'
-        ? `${window.location.origin}/menu`
-        : 'http://localhost:3000/menu';
+    const menuUrl = 'https://sabana-pos.vercel.app/menu';
 
     const handleCopyLink = async () => {
         try {
